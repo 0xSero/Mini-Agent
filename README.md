@@ -13,7 +13,7 @@ This project comes packed with features designed for a robust and intelligent ag
 *   ✅ **MCP Tool Integration**: Natively supports MCP for tools like knowledge graph access and web search.
 *   ✅ **ACP Support**: Native support for [Agent Client Protocol](https://agentclientprotocol.com/) for integration with ACP-compatible clients like Zed.
 *   ✅ **Comprehensive Logging**: Detailed logs for every request, response, and tool execution for easy debugging.
-*   ✅ **Clean & Simple Design**: A beautiful CLI and a codebase that is easy to understand, making it the perfect starting point for building advanced agents.
+*   ✅ **Clean & Simple Design**: A beautiful CLI and a codebase that is easy to understand, making it the perfect starting point for building 
 
 ## Table of Contents
 

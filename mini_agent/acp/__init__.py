@@ -44,6 +44,21 @@ def acp_to_text(blocks: Iterable[Any]) -> str:
     return "\n".join(block.get("text", "") if isinstance(block, dict) else getattr(block, "text", "") for block in blocks)
 
 
+def _format_tool_args(args: dict[str, Any]) -> str:
+    """Format tool args so ACP clients can display useful context."""
+    if not args:
+        return ""
+    parts = []
+    for key, value in args.items():
+        text = repr(value)
+        if len(text) > 48:
+            text = f"{text[:45]}..."
+        parts.append(f"{key}={text}")
+        if len(parts) == 3:  # avoid spamming UI
+            break
+    return ", ".join(parts)
+
+
 def _load_system_prompt(config: Config, skill_loader) -> str:
     path = Config.find_config_file(config.agent.system_prompt_path)
     text = path.read_text(encoding="utf-8") if path and path.exists() else "You are a helpful AI assistant."
@@ -91,12 +106,23 @@ class MiniMaxACPAgent:
         workspace = Path(params.cwd or self._config.agent.workspace_dir).expanduser()
         if not workspace.is_absolute():
             workspace = workspace.resolve()
+        requested_mcp = getattr(params, "mcpServers", [])
+        logger.info(
+            "ACP newSession cwd=%s (resolved=%s). MCP servers requested: %d",
+            params.cwd,
+            workspace,
+            len(requested_mcp),
+        )
         tools = list(self._base_tools)
         add_workspace_tools(tools, self._config, workspace)
-        extra_tools, connections = await self._connect_mcp_servers(getattr(params, "mcpServers", []))
+        extra_tools, connections = await self._connect_mcp_servers(requested_mcp)
         tools.extend(extra_tools)
         agent = Agent(llm_client=self._llm, system_prompt=self._system_prompt, tools=tools, max_steps=self._config.agent.max_steps, workspace_dir=str(workspace))
         self._sessions[session_id] = SessionState(agent=agent, mcp_connections=connections)
+        if connections:
+            logger.info("Activated %d MCP servers providing %d tools", len(connections), len(extra_tools))
+        elif requested_mcp:
+            logger.warning("ACP client requested MCP servers but none connected successfully")
         logger.info("Created ACP session %s (workspace=%s)", session_id, workspace)
         return NewSessionResponse(sessionId=session_id)
 
@@ -107,7 +133,6 @@ class MiniMaxACPAgent:
         state.cancelled = False
         user_text = acp_to_text(params.prompt)
         state.agent.messages.append(Message(role="user", content=user_text))
-        await self._send(params.sessionId, update_agent_message(text_block(user_text)))
         stop_reason = await self._run_turn(state, params.sessionId)
         return PromptResponse(stopReason=stop_reason)
 
@@ -139,7 +164,9 @@ class MiniMaxACPAgent:
                 return "end_turn"
             for call in response.tool_calls:
                 name, args = call.function.name, call.function.arguments
-                await self._send(session_id, start_tool_call(call.id, f"{name}()", kind="execute", raw_input=args))
+                arg_summary = _format_tool_args(args)
+                label = f"{name}({arg_summary})" if arg_summary else f"{name}()"
+                await self._send(session_id, start_tool_call(call.id, label, kind="execute", raw_input=args))
                 tool = agent.tools.get(name)
                 if not tool:
                     text, status = f"Unknown tool: {name}", "failed"
@@ -157,15 +184,22 @@ class MiniMaxACPAgent:
     async def _connect_mcp_servers(self, servers) -> tuple[list, list[MCPServerConnection]]:
         tools, connections = [], []
         if not servers:
+            logger.info("ACP client did not request any MCP servers")
             return tools, connections
         for server in servers:
+            name = getattr(server, "name", "unknown")
             if getattr(server, "type", "stdio") != "stdio":
-                logger.warning("Unsupported MCP server type: %s", getattr(server, "type", None))
+                logger.warning("Unsupported MCP server type for %s: %s", name, getattr(server, "type", None))
                 continue
             env = {item.name: item.value for item in getattr(server, "env", [])}
-            conn = MCPServerConnection(server.name, server.command, list(server.args or []), env)
+            conn = MCPServerConnection(name, server.command, list(server.args or []), env)
+            logger.info("Connecting to MCP server '%s' via %s %s", name, server.command, server.args or [])
             if await conn.connect():
-                connections.append(conn); tools.extend(conn.tools)
+                connections.append(conn)
+                tools.extend(conn.tools)
+                logger.info("Loaded %d tools from MCP server '%s'", len(conn.tools), name)
+            else:
+                logger.warning("Failed to connect to MCP server '%s'", name)
         return tools, connections
 
     async def _send(self, session_id: str, update: Any) -> None:
