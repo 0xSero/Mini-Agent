@@ -13,7 +13,7 @@ This project comes packed with features designed for a robust and intelligent ag
 *   ✅ **MCP Tool Integration**: Natively supports MCP for tools like knowledge graph access and web search.
 *   ✅ **ACP Support**: Native support for [Agent Client Protocol](https://agentclientprotocol.com/) for integration with ACP-compatible clients like Zed.
 *   ✅ **Comprehensive Logging**: Detailed logs for every request, response, and tool execution for easy debugging.
-*   ✅ **Clean & Simple Design**: A beautiful CLI and a codebase that is easy to understand, making it the perfect starting point for building advanced agents.
+*   ✅ **Clean & Simple Design**: A beautiful CLI and a codebase that is easy to understand, making it the perfect starting point for building 
 
 ## Table of Contents
 
@@ -227,55 +227,27 @@ pytest tests/test_agent.py tests/test_note_tool.py -v
 
 ## ACP (Agent Client Protocol) Support
 
-Mini-Agent supports the [Agent Client Protocol](https://agentclientprotocol.com/), allowing it to integrate seamlessly with ACP-compatible clients like Zed.
+Mini-Agent supports the [Agent Client Protocol](https://agentclientprotocol.com/) for integration with ACP-compatible clients like Zed.
 
-### Features
-
-- ✅ **Multiple Concurrent Sessions**: Run multiple conversations simultaneously
-- ✅ **Real-time Streaming**: Stream agent thoughts, messages, and tool execution in real-time
-- ✅ **Tool Execution**: Execute tools with progress tracking and error handling
-- ✅ **MiniMax Integration**: Full support for MiniMax's thinking blocks and unique tool format
-
-### Quick Start
-
+**Quick Start:**
 ```bash
-# Install with ACP support
-pip install mini-agent
-
 # Run as ACP server
 mini-agent-acp
 ```
 
-### Integration with Zed
+**Zed Integration:**
+```json
+{
+  "agents": [{"name": "mini-agent", "command": "mini-agent-acp"}]
+}
+```
 
-Zed communicates with external agents over ACP via stdio. To use Mini‑Agent in Zed, point Zed to the exact executable you installed (ideally the venv binary):
-
-1) Open the Agent Panel (cmd-?) and create a New External Agent → ACP.
-2) Set Command to your venv path, for example:
-   - `/Users/sero/projects/Mini-Agent/.venv/bin/mini-agent-acp`
-3) Optionally set the working directory to your project path.
-4) Start a thread and talk to the agent. Tool progress and results stream in real time.
-
-Tips for consistent versions:
-- Prefer the absolute venv path over relying on PATH.
-- If needed, wrap the command to print the installed version before exec:
-  - Command: `/bin/bash`
-  - Args: `-lc`, `echo 'mini-agent:' $(python -c 'import importlib.metadata as m; print(m.version("mini-agent"))') 'at' $(python -c 'import mini_agent; print(mini_agent.__file__)') >&2; exec /Users/sero/projects/Mini-Agent/.venv/bin/mini-agent-acp`
-
-Configuration search order:
-- `mini_agent/config/config.yaml` (dev checkout)
-- `~/.mini-agent/config/config.yaml` (recommended for keys)
-- `<site-packages>/mini_agent/config/config.yaml`
-
-Security: never commit API keys. Use `~/.mini-agent/config/config.yaml` and keep `config.yaml` out of version control (already ignored).
-
-For detailed ACP documentation, see [mini_agent/acp/README.md](mini_agent/acp/README.md).
+Features: Multiple concurrent sessions, real-time streaming, tool execution with progress tracking, and MiniMax thinking blocks.
 
 ## Related Documentation
 
 - [Development Guide](docs/DEVELOPMENT_GUIDE.md) - Detailed development and configuration guidance
 - [Production Guide](docs/PRODUCTION_GUIDE.md) - Best practices for production deployment
-- [ACP Integration](mini_agent/acp/README.md) - Agent Client Protocol implementation details
 
 ## Contributing
 

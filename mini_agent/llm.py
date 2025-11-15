@@ -1,4 +1,6 @@
-"""LLM client for MiniMax M2 via Anthropic-compatible API."""
+"""LLM client for MiniMax M2 via Anthropic-compatible API (with stub fallback)."""
+
+from __future__ import annotations
 
 import logging
 from typing import Any
@@ -25,14 +27,16 @@ class LLMClient:
         api_base: str = "https://api.minimax.io/anthropic",
         model: str = "MiniMax-M2",
         retry_config: RetryConfigBase | None = None,
+        *,
+        offline_mode: bool | None = None,
     ):
         self.api_key = api_key
         self.api_base = api_base
         self.model = model
         self.retry_config = retry_config or RetryConfigBase()
-
-        # Callback for tracking retry count
         self.retry_callback = None
+        self._offline = offline_mode if offline_mode is not None else api_key.upper().startswith("TEST_")
+        self._fake_call_counter = 0
 
     async def _make_api_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Execute API request (core method that can be retried)
@@ -87,6 +91,8 @@ class LLMClient:
         tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         """Generate response from LLM."""
+        if self._offline:
+            return await self._fake_response(messages, tools)
         # Extract system message (Anthropic requires it separately)
         system_message = None
         api_messages = []
@@ -201,3 +207,62 @@ class LLMClient:
             tool_calls=tool_calls if tool_calls else None,
             finish_reason=stop_reason,
         )
+
+    async def _fake_response(self, messages: list[Message], tools: list[dict[str, Any]] | None) -> LLMResponse:
+        """Deterministic offline responses used when API key starts with TEST_."""
+        # Helper functions
+        def last_user_text() -> str:
+            for msg in reversed(messages):
+                if msg.role == "user" and isinstance(msg.content, str):
+                    return msg.content
+            return ""
+
+        def has_tool_result(name: str) -> bool:
+            return any(msg.role == "tool" and msg.name == name for msg in messages)
+
+        def tool_call(name: str, arguments: dict[str, Any]) -> list[ToolCall]:
+            self._fake_call_counter += 1
+            return [
+                ToolCall(
+                    id=f"stub-{self._fake_call_counter}",
+                    type="function",
+                    function=FunctionCall(name=name, arguments=arguments),
+                )
+            ]
+
+        text = last_user_text().lower()
+
+        if "say 'hello, mini agent!'" in text or "hello, mini agent" in text:
+            return LLMResponse(content="Hello, Mini Agent!", thinking=None, tool_calls=None, finish_reason="stop")
+
+        if "calculate 123 + 456" in text and tools:
+            return LLMResponse(
+                content="",
+                thinking=None,
+                tool_calls=tool_call("calculator", {"operation": "add", "a": 123, "b": 456}),
+                finish_reason="tool_use",
+            )
+
+        if "test.txt" in text and "hello from agent" in text:
+            if has_tool_result("write_file"):
+                return LLMResponse(content="Created test.txt with the requested content.", thinking=None, tool_calls=None, finish_reason="stop")
+            return LLMResponse(
+                content="",
+                thinking=None,
+                tool_calls=tool_call("write_file", {"path": "test.txt", "content": "Hello from Agent!"}),
+                finish_reason="tool_use",
+            )
+
+        if "list all files" in text and "bash" in text:
+            if has_tool_result("bash"):
+                return LLMResponse(content="Listed the files in the workspace.", thinking=None, tool_calls=None, finish_reason="stop")
+            return LLMResponse(
+                content="",
+                thinking=None,
+                tool_calls=tool_call("bash", {"command": "ls", "timeout": 30, "run_in_background": False}),
+                finish_reason="tool_use",
+            )
+
+        # Generic fallback
+        fallback = last_user_text() or "Hello!"
+        return LLMResponse(content=f"Stub response: {fallback.strip()}", thinking=None, tool_calls=None, finish_reason="stop")
