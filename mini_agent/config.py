@@ -23,9 +23,8 @@ class LLMConfig(BaseModel):
     """LLM configuration"""
 
     api_key: str
-    api_base: str = "https://api.minimax.io"
+    api_base: str = "https://api.minimax.io/anthropic"
     model: str = "MiniMax-M2"
-    provider: str = "anthropic"  # "anthropic" or "openai"
     retry: RetryConfig = Field(default_factory=RetryConfig)
 
 
@@ -126,9 +125,8 @@ class Config(BaseModel):
 
         llm_config = LLMConfig(
             api_key=data["api_key"],
-            api_base=data.get("api_base", "https://api.minimax.io"),
+            api_base=data.get("api_base", "https://api.minimax.io/anthropic"),
             model=data.get("model", "MiniMax-M2"),
-            provider=data.get("provider", "anthropic"),
             retry=retry_config,
         )
 
@@ -212,3 +210,13 @@ class Config(BaseModel):
 
         # Fallback to package config directory for error message purposes
         return cls.get_package_dir() / "config" / "config.yaml"
+
+    @classmethod
+    def load(cls) -> "Config":
+        """Load configuration using the default search order."""
+        config_path = cls.get_default_config_path()
+        if not config_path.exists():
+            raise FileNotFoundError(
+                "Configuration file not found. Run scripts/setup-config.sh or place config.yaml in mini_agent/config/."
+            )
+        return cls.from_yaml(config_path)

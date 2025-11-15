@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from mini_agent import LLMClient
 from mini_agent.agent import Agent
 from mini_agent.config import Config
+from mini_agent.llm import LLMClient
 from mini_agent.tools import BashTool, EditTool, ReadTool, WriteTool
 from mini_agent.tools.mcp_loader import load_mcp_tools_async
 from mini_agent.tools.note_tool import RecallNoteTool, SessionNoteTool
@@ -34,7 +34,11 @@ async def test_basic_agent_usage():
     config = Config.from_yaml(config_path)
 
     # Check API key
-    if not config.llm.api_key or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE":
+    if (
+        not config.llm.api_key
+        or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE"
+        or config.llm.api_key.upper().startswith("TEST_")
+    ):
         pytest.skip("API key not configured")
 
     # Use temporary workspace
@@ -138,7 +142,11 @@ async def test_session_memory_demo():
     config = Config.from_yaml(config_path)
 
     # Check API key
-    if not config.llm.api_key or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE":
+    if (
+        not config.llm.api_key
+        or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE"
+        or config.llm.api_key.upper().startswith("TEST_")
+    ):
         pytest.skip("API key not configured")
 
     # Use temporary workspace
