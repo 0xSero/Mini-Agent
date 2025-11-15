@@ -45,7 +45,7 @@ class MiniMaxACPAgent:
 
     async def newSession(self, params: NewSessionRequest) -> NewSessionResponse:
         session_id = f"sess-{len(self._sessions)}-{uuid4().hex[:8]}"
-        self._sessions[session_id] = Agent(self._llm, self._tools, self._system_prompt, workspace_dir=params.cwd or ".")
+        self._sessions[session_id] = Agent(self._llm, self._system_prompt, self._tools, workspace_dir=params.cwd or ".")
         logger.info("Created session: %s", session_id)
         return NewSessionResponse(sessionId=session_id)
 
@@ -58,7 +58,7 @@ class MiniMaxACPAgent:
         agent.messages.append(Message(role="user", content=user_text))
         await self._send(params.sessionId, update_agent_message(text_block(f"User: {user_text}")))
 
-        for _ in range(10):
+        for _ in range(agent.max_steps):
             tool_schemas = [t.to_schema() for t in agent.tools.values()]
 
             try:
