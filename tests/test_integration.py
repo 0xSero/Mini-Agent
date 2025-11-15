@@ -34,7 +34,11 @@ async def test_basic_agent_usage():
     config = Config.from_yaml(config_path)
 
     # Check API key
-    if not config.llm.api_key or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE":
+    if (
+        not config.llm.api_key
+        or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE"
+        or config.llm.api_key.upper().startswith("TEST_")
+    ):
         pytest.skip("API key not configured")
 
     # Use temporary workspace
@@ -138,7 +142,11 @@ async def test_session_memory_demo():
     config = Config.from_yaml(config_path)
 
     # Check API key
-    if not config.llm.api_key or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE":
+    if (
+        not config.llm.api_key
+        or config.llm.api_key == "YOUR_MINIMAX_API_KEY_HERE"
+        or config.llm.api_key.upper().startswith("TEST_")
+    ):
         pytest.skip("API key not configured")
 
     # Use temporary workspace

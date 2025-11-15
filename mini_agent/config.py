@@ -189,3 +189,13 @@ class Config(BaseModel):
 
         # Fallback to package config directory for error message purposes
         return cls.get_package_dir() / "config" / "config.yaml"
+
+    @classmethod
+    def load(cls) -> "Config":
+        """Load configuration using the default search order."""
+        config_path = cls.get_default_config_path()
+        if not config_path.exists():
+            raise FileNotFoundError(
+                "Configuration file not found. Run scripts/setup-config.sh or place config.yaml in mini_agent/config/."
+            )
+        return cls.from_yaml(config_path)
