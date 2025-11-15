@@ -227,47 +227,27 @@ pytest tests/test_agent.py tests/test_note_tool.py -v
 
 ## ACP (Agent Client Protocol) Support
 
-Mini-Agent supports the [Agent Client Protocol](https://agentclientprotocol.com/), allowing it to integrate seamlessly with ACP-compatible clients like Zed.
+Mini-Agent supports the [Agent Client Protocol](https://agentclientprotocol.com/) for integration with ACP-compatible clients like Zed.
 
-### Features
-
-- ✅ **Multiple Concurrent Sessions**: Run multiple conversations simultaneously
-- ✅ **Real-time Streaming**: Stream agent thoughts, messages, and tool execution in real-time
-- ✅ **Tool Execution**: Execute tools with progress tracking and error handling
-- ✅ **MiniMax Integration**: Full support for MiniMax's thinking blocks and unique tool format
-
-### Quick Start
-
+**Quick Start:**
 ```bash
-# Install with ACP support
-pip install mini-agent
-
 # Run as ACP server
 mini-agent-acp
 ```
 
-### Integration with Zed
-
-Add to your Zed agent configuration:
-
+**Zed Integration:**
 ```json
 {
-  "agents": [
-    {
-      "name": "mini-agent",
-      "command": "mini-agent-acp"
-    }
-  ]
+  "agents": [{"name": "mini-agent", "command": "mini-agent-acp"}]
 }
 ```
 
-For detailed ACP documentation, see [mini_agent/acp/README.md](mini_agent/acp/README.md).
+Features: Multiple concurrent sessions, real-time streaming, tool execution with progress tracking, and MiniMax thinking blocks.
 
 ## Related Documentation
 
 - [Development Guide](docs/DEVELOPMENT_GUIDE.md) - Detailed development and configuration guidance
 - [Production Guide](docs/PRODUCTION_GUIDE.md) - Best practices for production deployment
-- [ACP Integration](mini_agent/acp/README.md) - Agent Client Protocol implementation details
 
 ## Contributing
 
