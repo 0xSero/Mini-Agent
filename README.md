@@ -27,6 +27,7 @@ This project comes packed with features designed for a robust and intelligent ag
     - [Task Execution](#task-execution)
     - [Using a Claude Skill (e.g., PDF Generation)](#using-a-claude-skill-eg-pdf-generation)
     - [Web Search \& Summarization (MCP Tool)](#web-search--summarization-mcp-tool)
+  - [ACP \& Zed Editor Integration](#acp--zed-editor-integration)
   - [Testing](#testing)
     - [Quick Run](#quick-run)
     - [Test Coverage](#test-coverage)
@@ -207,7 +208,7 @@ mini-agent --workspace /path/to/your/project
 
 > 📖 For more production deployment guidance, see [Production Guide](docs/PRODUCTION_GUIDE.md)
 
-## Zed Editor Integration
+## ACP & Zed Editor Integration
 
 Mini Agent supports the [Agent Communication Protocol (ACP)](https://github.com/modelcontextprotocol/protocol) for integration with code editors like Zed.
 
